@@ -11,11 +11,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 
-import com.dodo.cassandra.persistence.LocationPersistence;
 import com.dodo.cassandra.tools.GeoApi;
+import com.dodo.cassandra.tools.Tool;
 import com.dodo.error.ErrorService;
 import com.dodo.model.Geocoding;
-import com.dodo.model.Locations;
+import com.dodo.model.Geocodings;
+import com.dodo.model.Response;
+import com.dodo.mongo.repository.GeocodingRepository;
 import com.fasterxml.jackson.core.JsonParseException;
 
 
@@ -30,6 +32,8 @@ public class LocationServicesRouteBuilder extends SpringRouteBuilder {
 	private Environment env;
 	
 	private GeoApi geoApi;
+	
+	private GeocodingRepository geocodingRepository;
 
 	@Autowired
 	void setGeoApi(GeoApi geoApi){
@@ -42,9 +46,17 @@ public class LocationServicesRouteBuilder extends SpringRouteBuilder {
 		env = e;
 	}
 	
+	@Autowired
+	public void setGeocodingRepository(GeocodingRepository geocodingRepository) {
+		this.geocodingRepository = geocodingRepository;
+		logger.info("#########################  mongo db collection initialization  ####################");
+		this.geocodingRepository.createGeocodingCollection();
+	}
+
 	@Override
     public void configure() throws Exception {
 
+		
 		//env = Tool.prop();
 		logger.info("swagger.host:"+env.getProperty("swagger.host"));
 		onException(JsonParseException.class)
@@ -58,8 +70,9 @@ public class LocationServicesRouteBuilder extends SpringRouteBuilder {
         restConfiguration().component("servlet").bindingMode(RestBindingMode.json)
         	.host(env.getProperty("swagger.host"))
             .dataFormatProperty("prettyPrint", "true")
+            .scheme(env.getProperty("swagger.scheme"))
             .contextPath("Location")
-            .port(env.getProperty("swagger.port"))
+            .port(env.getProperty("server.port"))
             .apiContextPath("/api-doc")
             .apiProperty("api.title", env.getProperty("swagger.title"))
             .apiProperty("api.description", env.getProperty("swagger.description"))
@@ -83,9 +96,20 @@ public class LocationServicesRouteBuilder extends SpringRouteBuilder {
 		.param().name("latitude").type(path).description("The  latitude ").dataType("string").endParam()
 		.param().name("longitude").type(path).description("The  longitude ").dataType("string").endParam()
 		.outType(Geocoding.class)
-		.to("direct:location");		
-		
+		.to("direct:location")
 
+		.get("/mongoLocation/latitude/{latitude}/longitude/{longitude}")
+		.param().name("latitude").type(path).description("The  latitude ").dataType("string").endParam()
+		.param().name("longitude").type(path).description("The  longitude ").dataType("string").endParam()
+		.outType(Geocodings.class)
+		.to("direct:mongoLocation")
+		
+		.post("/save")
+		.type(Geocodings.class)
+		.outType(Response.class)
+		.to("direct:saveGeocoding");
+        
+        
         from("direct:ping")
         .id("ping")
         .routeId("ping")
@@ -99,6 +123,25 @@ public class LocationServicesRouteBuilder extends SpringRouteBuilder {
 		});
 		
   
+		from("direct:mongoLocation")
+		.id("mongoLocation")
+		.routeId("mongoLocation")
+    	.choice()
+    	.when().simple("${bean:validator?method=isLatitudeAndLongitudeRight}")
+		.process(exchange -> {
+			logger.info(" ############  EXCHANGE:"+exchange);
+			String longitude = (String)exchange.getIn().getHeader("longitude",String.class);
+			String latitude = (String)exchange.getIn().getHeader("latitude",String.class);
+			//String address = geoApi.getAddress(new Double(latitude),new Double(longitude));
+			Geocoding geocoding = new Geocoding();
+			geocoding.setLatitude(latitude);
+			geocoding.setLongitude(longitude);
+        	//geocoding.setAddress(address);
+			Geocodings geocodings = geocodingRepository.getGeocodings(geocoding);
+			exchange.getIn().setBody(geocodings);
+		}).otherwise()
+    	.bean(new ErrorService(), "locationError");	 
+ 
 		from("direct:location")
 		.id("location")
 		.routeId("location")
@@ -116,7 +159,29 @@ public class LocationServicesRouteBuilder extends SpringRouteBuilder {
 			exchange.getIn().setBody(geocoding);
 		}).otherwise()
     	.bean(new ErrorService(), "locationError");	 
-          
+		
+		
+		from("direct:saveGeocoding")
+		.id("saveGeocoding")
+		.routeId("saveGeocoding")
+    	.choice()
+    	.when().simple("${bean:validator?method=areLatitudeAndLongitudeRight}")
+		.process(exchange -> {
+			logger.info(" insert ############  EXCHANGE:"+exchange);
+			Geocodings geocodings = (Geocodings)exchange.getIn().getBody(Geocodings.class);
+			
+			for(Geocoding geocoding: geocodings.getList()){//creating UUID
+				geocoding.setGeocodingId(Tool.unique());
+			}
+			geocodingRepository.insertGeocoding(geocodings.getList());
+			logger.info("  ############ INSERT COMPLETED");
+			Response response = new Response();
+			response.setRequest(geocodings);
+			response.setMsg("Message successfully received!");
+			response.setStatus("OK");
+			exchange.getIn().setBody(response);
+		});		
+		
     }
 	
 

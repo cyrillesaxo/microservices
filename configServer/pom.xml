@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>com.dodo</groupId>
-	<artifactId>configServer</artifactId>
+	<artifactId>configserver</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
@@ -15,14 +15,14 @@
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>1.4.3.RELEASE</version>
-		<relativePath/> <!-- lookup parent from repository -->
+		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.version>1.8</java.version>
-		<docker.image.prefix>configServer</docker.image.prefix>
+		<docker.image.prefix>ms</docker.image.prefix>
 	</properties>
 
 	<dependencies>
@@ -37,22 +37,22 @@
 			<scope>test</scope>
 		</dependency>
 
-	    <dependency>
-	        <groupId>org.springframework.boot</groupId>
-	        <artifactId>spring-boot-starter-actuator</artifactId>
-	    </dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
 
 		<dependency>
-		    <groupId>com.spotify</groupId>
-		    <artifactId>docker-maven-plugin</artifactId>
-		    <version>0.4.13</version>
-		</dependency>	
+			<groupId>com.spotify</groupId>
+			<artifactId>docker-maven-plugin</artifactId>
+			<version>0.4.13</version>
+		</dependency>
 		<dependency>
-		    <groupId>com.spotify</groupId>
-		    <artifactId>docker-client</artifactId>
-		    <version>7.0.2</version>
-		</dependency>	
-				    		
+			<groupId>com.spotify</groupId>
+			<artifactId>docker-client</artifactId>
+			<version>7.0.2</version>
+		</dependency>
+
 	</dependencies>
 
 	<dependencyManagement>
@@ -74,23 +74,33 @@
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
 			<plugin>
-	            <groupId>com.spotify</groupId>
-	            <artifactId>docker-maven-plugin</artifactId>
-	            <version>0.4.13</version>
-	            <configuration>
-	                <imageName>${docker.image.prefix}/${project.artifactId}</imageName>
-	                <dockerDirectory>src/main/docker</dockerDirectory>
-			        <baseImage>java</baseImage>
-			        <entryPoint>["java", "-jar", "/${project.build.finalName}.jar"]</entryPoint>	                
-	                <resources>
-	                    <resource>
-	                        <targetPath>/</targetPath>
-	                        <directory>${project.build.directory}</directory>
-	                        <include>${project.build.finalName}.jar</include>
-	                    </resource>
-	                </resources>
-	            </configuration>
-        	</plugin>			
+				<groupId>com.spotify</groupId>
+				<artifactId>docker-maven-plugin</artifactId>
+				<version>0.4.11</version>
+				<configuration>
+					<pushImage>true</pushImage>
+					<docker.registry>10.0.0.112:5000/</docker.registry>
+					<imageName>10.0.0.112:5000/${docker.image.prefix}_${project.artifactId}:3</imageName>
+					<dockerDirectory>src/main/docker</dockerDirectory>
+					<resources>
+						<resource>
+							<targetPath>/</targetPath>
+							<directory>${project.build.directory}</directory>
+							<include>${project.build.finalName}.jar</include>
+							<filtering>true</filtering>
+						</resource>
+					</resources>
+<!-- 					<forceTags>true</forceTags>
+					<imageTags>
+						<imageTag>${project.version}</imageTag>
+						<imageTag>1</imageTag>
+					</imageTags>-->
+        <image>${docker.image.prefix}_${project.artifactId}:${project.version}</image>
+         <newName>10.0.0.112:5000/${docker.image.prefix}_${project.artifactId}:2</newName> 
+               <serverId>docker-lab</serverId>
+      <registryUrl>http://10.0.0.112:5000/v2/</registryUrl>				 
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 

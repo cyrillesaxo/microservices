@@ -8,6 +8,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import com.dodo.model.Geocoding;
+import com.dodo.model.Geocodings;
+
 
 @Component
 public class Validator {
@@ -25,6 +28,34 @@ public class Validator {
 		logger.info(" str --GeoApi.getAddress lat:"+latitude+" -  lng:"+longitude);
 		logger.info("numb -- GeoApi.getAddress lat:"+new Double(latitude)+" -  lng:"+new Double(longitude));
 		if(validateFormat(latitude.trim()+","+longitude.trim())) return false;
+		
+		exchange.getIn().setBody(exchange);
+		return ok;
+	}
+
+
+	public boolean isLatitudeAndLongitudeRight(Geocoding geocoding) {
+		
+		boolean ok = true;
+		String latitude = geocoding.getLatitude();
+		String longitude = geocoding.getLongitude();
+		if(null == latitude || "".equals(latitude.trim()) || !isNumeric(latitude.trim())) return false;
+		if(null == longitude || "".equals(longitude.trim()) || !isNumeric(longitude.trim())) return false;
+		
+		logger.info(" str --GeoApi.getAddress lat:"+latitude+" -  lng:"+longitude);
+		logger.info("numb -- GeoApi.getAddress lat:"+new Double(latitude)+" -  lng:"+new Double(longitude));
+		if(validateFormat(latitude.trim()+","+longitude.trim())) return false;
+		
+		return ok;
+	}
+	public boolean areLatitudeAndLongitudeRight(Exchange exchange) {
+		
+		boolean ok = true;
+		if(! ((exchange.getIn().getBody(Geocodings.class)) instanceof Geocodings ))return false;
+		Geocodings geocodings = (Geocodings)exchange.getIn().getBody(Geocodings.class);
+		
+		for( Geocoding geocoding : geocodings.getList())
+				if(!isLatitudeAndLongitudeRight(geocoding))return false;
 		
 		exchange.getIn().setBody(exchange);
 		return ok;

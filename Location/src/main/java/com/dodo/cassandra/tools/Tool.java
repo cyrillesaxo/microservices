@@ -3,7 +3,9 @@ package com.dodo.cassandra.tools;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.SecureRandom;
 import java.util.Properties;
+import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,4 +43,25 @@ public class Tool {
         }
     	return prop;
 	}
+	
+    public static int generateUniqueId() {      
+        UUID idOne = UUID.randomUUID();
+        String str=""+idOne;        
+        int uid=str.hashCode();
+        String filterStr=""+uid;
+        str=filterStr.replaceAll("-", "");
+        return Integer.parseInt(str);
+    }
+    
+    private static volatile SecureRandom numberGenerator = null;
+    private static final long MSB = 0x8000000000000000L;
+
+    public static String unique() {
+        SecureRandom ng = numberGenerator;
+        if (ng == null) {
+            numberGenerator = ng = new SecureRandom();
+        }
+
+        return Long.toHexString(MSB | ng.nextLong()) + Long.toHexString(MSB | ng.nextLong());
+    }  
 }

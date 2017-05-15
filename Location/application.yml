@@ -1,0 +1,14 @@
+applications:
+  - name: location2
+    memory: 1024M
+    instances: 1
+    path: target/location-0.0.1-SNAPSHOT.jar
+    host: location2
+    timeout: 180
+    health-check-type: none 
+    services:
+      - configserver
+      - hystrixserver
+      - eurekaserver
+    env:
+     APPLICATION_DOMAIN: https://api.sys.px-01.cf.t-mobile.com

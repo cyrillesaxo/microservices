@@ -1,6 +1,11 @@
 spring:
+  #profiles: cloud
   application:
     name: location
   cloud:
-    config:
-      uri: http://localhost:8888
+   config:
+      uri: http://localhost:8828
+      #uri: http://localhost:8828,http://localhost:2221
+      #uri: http://10.0.0.126:8888
+      #uri: ${vcap.services.configserver.credentials.uri:http://user:password@localhost:8828,localhost:config-service:2221}
+      

@@ -3,4 +3,5 @@ spring:
     name: passenger
   cloud:
     config:
-      uri: http://localhost:8888
+      #uri: http://localhost:8828
+      uri: ${vcap.services.configserver.credentials.uri:http://user:password@localhost:8828}
