@@ -3,8 +3,17 @@ package com.dodo.model;
 import java.io.Serializable;
 import java.util.List;
 
-public class Geocodings implements Serializable  {
+public class Geocodings /*implements Serializable*/  {
 	List<Geocoding> list;
+
+	public Geocodings() {
+		super();
+	}
+
+	public Geocodings(List<Geocoding> list) {
+		super();
+		this.list = list;
+	}
 
 	public List<Geocoding> getList() {
 		return list;

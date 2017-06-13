@@ -5,6 +5,8 @@ support with no web.xml.
 
 ## Quick Start
 
+http://en.mygeoposition.com/
+
 This project is built with [Spring Boot](http://projects.spring.io/spring-boot/) and uses 
 [Apache Camel](http://camel.apache.org) for its REST API. 
 
@@ -43,20 +45,48 @@ see the Swagger documentation.
 
 The health check url: http://localhost:8181/health
 hystrix:http://localhost:9023/
+ hystrix input test: http://localhost:9023/hystrix.stream
 Eureka (service registry and discovery): http://localhost:8761/
+zipking: http://localhost:9411/
 
 orchestration : http://localhost:8086/1/33.969601/-84.100033/integration
 
 
  -- actuator
 
-https://location.apps.px-01.cf.t-mobile.com/health
-https://location.apps.px-01.cf.t-mobile.com/metrics
-https://location.apps.px-01.cf.t-mobile.com/beans
-https://location.apps.px-01.cf.t-mobile.com/configprops
-https://location.apps.px-01.cf.t-mobile.com/mappings
-https://location.apps.px-01.cf.t-mobile.com/env
-https://location.apps.px-01.cf.t-mobile.com
+http://localhost:8181/health
+http://localhost:8181/metrics
+http://localhost:8181/beans
+http://localhost:8181/configprops
+http://localhost:8181/mappings
+http://localhost:8181/env
+http://location.apps.px-01.cf.t-mobile.com
+
+body:
+ --1--
+ {
+    "list": [
+		{
+		  "geocodingId": null,
+		  "longitude": "-84.100033",
+		  "latitude": "33.969601",
+		  "address": "2651 Satellite Blvd, Duluth, GA 30096, USA"
+		}
+    ]
+  }
+  
+ --2-- 
+  {
+    "list": [
+		  {
+		  "geocodingId": null,
+		  "longitude": "-0.1276250",
+		  "latitude": "51.5033640",
+		  "address": "10 Downing St, Westminster, London SW1A 2AB, UK"
+		}
+    ]
+  }
+   
 
 
 -- rest call
@@ -70,3 +100,5 @@ https://location.apps.px-01.cf.t-mobile.com
 
 =================google key =============
 google key:  AIzaSyC8-Qu9AKJuP2HohE6pQUmk--R4KWMmkZU 
+
+

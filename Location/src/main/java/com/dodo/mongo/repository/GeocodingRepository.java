@@ -26,11 +26,6 @@ public class GeocodingRepository {
     public long countPings() {
         List<Geocoding> results = null;
         
-        //private String geocodingId;
-    	//private String longitude;
-    	//private String latitude;
-    	//private String address;
-        
         Query query = new Query();
         query.addCriteria(Criteria.where("longitude").is("33.969601").and("latitude").is("-84.100033"));
 

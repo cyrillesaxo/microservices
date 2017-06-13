@@ -2,6 +2,9 @@ package com.dodo.locationService.rest;
 
 import static org.apache.camel.model.rest.RestParamType.path;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.camel.Exchange;
 import org.apache.camel.model.rest.RestBindingMode;
 import org.apache.camel.spring.SpringRouteBuilder;
@@ -14,6 +17,7 @@ import org.springframework.core.env.Environment;
 import com.dodo.cassandra.tools.GeoApi;
 import com.dodo.cassandra.tools.Tool;
 import com.dodo.error.ErrorService;
+import com.dodo.hazelcast.HazelcastService;
 import com.dodo.model.Geocoding;
 import com.dodo.model.Geocodings;
 import com.dodo.model.Response;
@@ -34,6 +38,13 @@ public class LocationServicesRouteBuilder extends SpringRouteBuilder {
 	private GeoApi geoApi;
 	
 	private GeocodingRepository geocodingRepository;
+	
+	private HazelcastService hazelcastService;
+
+	@Autowired
+	public void setHazelcastService(HazelcastService hazelcastService) {
+		this.hazelcastService = hazelcastService;
+	}
 
 	@Autowired
 	void setGeoApi(GeoApi geoApi){
@@ -103,12 +114,24 @@ public class LocationServicesRouteBuilder extends SpringRouteBuilder {
 		.param().name("longitude").type(path).description("The  longitude ").dataType("string").endParam()
 		.outType(Geocodings.class)
 		.to("direct:mongoLocation")
+	
+		.get("/listAllFromCache")
+		.outType(Geocodings.class)
+		.to("direct:listCache")
 		
-		.post("/save")
-		.type(Geocodings.class)
+		.post("/savetoMongoDB")
+		.description("Save a list of Geocodings to MongoDB NOSQL")
+		//.typeList(Geocodings.class)
 		.outType(Response.class)
-		.to("direct:saveGeocoding");
+		.type(Geocodings.class)
+		.to("direct:saveGeocoding")
         
+		.post("/savetoCache")
+		.description("Save a list of Geocodings to hazelcast cluster")
+		//.typeList(Geocodings.class)
+		.outType(Response.class)
+		.type(Geocodings.class)
+		.to("direct:saveGeocodingToCache") ;      
         
         from("direct:ping")
         .id("ping")
@@ -122,7 +145,18 @@ public class LocationServicesRouteBuilder extends SpringRouteBuilder {
 			exchange.getIn().setBody(geocoding);
 		});
 		
-  
+        from("direct:listCache")
+        .id("listCache")
+        .routeId("listCache")
+        .process(exchange -> {
+        	String address = geoApi.getAddress(33.969601,-84.100033);
+        	Geocodings geocodings = new Geocodings();
+        	List<Geocoding> list = new ArrayList<Geocoding>(hazelcastService.listAllFromCache());
+        	geocodings.setList(list);
+			exchange.getIn().setBody(geocodings);
+		});  
+        
+        
 		from("direct:mongoLocation")
 		.id("mongoLocation")
 		.routeId("mongoLocation")
@@ -174,13 +208,36 @@ public class LocationServicesRouteBuilder extends SpringRouteBuilder {
 				geocoding.setGeocodingId(Tool.unique());
 			}
 			geocodingRepository.insertGeocoding(geocodings.getList());
-			logger.info("  ############ INSERT COMPLETED");
+			logger.info("  ############ INSERT TO MONGODB COMPLETED");
 			Response response = new Response();
 			response.setRequest(geocodings);
-			response.setMsg("Message successfully received!");
+			response.setMsg("Message successfully saved to mongodb!");
 			response.setStatus("OK");
 			exchange.getIn().setBody(response);
 		});		
+		
+		from("direct:saveGeocodingToCache")
+		.id("saveGeocodingToCache")
+		.routeId("saveGeocodingToCache")
+    	.choice()
+    	.when().simple("${bean:validator?method=areLatitudeAndLongitudeRight}")
+		.process(exchange -> {
+			logger.info(" insert ############  EXCHANGE:"+exchange);
+			Geocodings geocodings = (Geocodings)exchange.getIn().getBody(Geocodings.class);
+			
+			for(Geocoding geocoding: geocodings.getList()){//creating UUID
+				geocoding.setGeocodingId(Tool.unique());
+				hazelcastService.insertToCache(geocoding);
+			}
+			logger.info("  ############ INSERT TO CACHE COMPLETED");
+			Response response = new Response();
+			response.setRequest(geocodings);
+			response.setMsg("Message successfully saved to cache!");
+			response.setStatus("OK");
+			exchange.getIn().setBody(response);
+		});		
+		
+		
 		
     }
 	

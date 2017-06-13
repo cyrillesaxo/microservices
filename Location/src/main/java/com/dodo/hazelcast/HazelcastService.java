@@ -3,12 +3,14 @@ package com.dodo.hazelcast;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.dodo.model.Geocoding;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.IQueue;
@@ -17,16 +19,19 @@ import com.hazelcast.core.IQueue;
 public class HazelcastService {
 
 	private HazelcastInstance hzInstance;
+	private Set<Geocoding> geocodingCacheRepository;
 	 
      public static final String ACCEPTED_MESSAGES_TRACKING_MAP_NAME = "received";
      public static final String RECIPIENT_QUEUE_NAME_SUFFIX = "recipient-";
+     public static final String LOCATION_NAMESPACE = "locations";
  	 private static final Logger logger = LoggerFactory.getLogger(HazelcastService.class);
 
      @Autowired
      public HazelcastService(HazelcastInstance hzInstance) {
          this.hzInstance = hzInstance;
+         this.geocodingCacheRepository = this.hzInstance.getSet(LOCATION_NAMESPACE);
      }
- 
+     
      // Starting the HazelcastInstance is heavyweight, while retrieving a distributed object from it is not
 
      private IQueue<HzRepository> recipientQueue(String user) {
@@ -38,7 +43,25 @@ public class HazelcastService {
          return hzInstance.getMap(ACCEPTED_MESSAGES_TRACKING_MAP_NAME);
      }  
      
-     public void send(HzRepository message)  {
+     public void insertToCache(Geocoding geocoding){
+    	 this.geocodingCacheRepository.add(geocoding);
+     }
+     
+     public Geocoding pullFromCache(Geocoding geocoding){
+    	 this.geocodingCacheRepository.remove(geocoding);
+    	 return geocoding;
+     }
+     
+     public Set<Geocoding> listAllFromCache(){
+    	 return this.geocodingCacheRepository;
+     }
+     
+     public Geocoding readFromCache(Geocoding geocoding){
+    	 if( this.geocodingCacheRepository.contains(geocoding)) return geocoding;
+    	 else return new Geocoding();
+     }
+     
+	public void send(HzRepository message)  {
 
          // Check if the message is duplicate. If duplicate, silently ignore it
          if( !isDuplicate(message)) {
