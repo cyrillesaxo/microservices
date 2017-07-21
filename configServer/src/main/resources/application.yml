@@ -7,12 +7,6 @@ spring:
     config:
       server:
         git :
-          #uri: https://github.com/cyrillesaxo/properties.git
-          #uri: http://cyrille@localhost:8880/gitblit-1.8.0/r/conf.git
           uri:  http://localhost:8888/gitblit-1.8.0/r/conf.git
-          #uri: http://CElound1@stash.internal.t-mobile.com:7990/scm/~celound1/demo.git
-          #uri: http://stash.internal.t-mobile.com:7990/scm/adms/amdocs-digital.git 
-          #username: CElound1
-          #password: Sang3melima!
           username: admin
           password: admin
