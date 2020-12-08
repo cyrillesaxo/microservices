@@ -11,4 +11,4 @@ applications:
       - hystrixserver
       - eurekaserver
     env:
-     APPLICATION_DOMAIN: https://api.sys.px-01.cf.t-mobile.com
+     APPLICATION_DOMAIN: https://localhost
